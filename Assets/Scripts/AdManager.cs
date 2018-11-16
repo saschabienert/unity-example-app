@@ -72,7 +72,14 @@ public class AdManager : MonoBehaviour {
 
 		HeyzapAds.SetNetworkCallbackListener(networkCallbackListener);
 		HeyzapAds.ShowDebugLogs();
-		HeyzapAds.Start("ENTER_YOUR_PUBLISHER_ID_HERE", HeyzapAds.FLAG_NO_OPTIONS);
+        #if !UNITY_EDITOR && (UNITY_ANDROID || UNITY_IPHONE)
+            #if UNITY_ANDROID
+                HeyzapAds.SetBundleIdentifier("com.example.android.snake");
+            #elif UNITY_IPHONE
+                HeyzapAds.SetBundleIdentifier("com.EnterpriseHeyzap.HeyzapSDKTest");
+            #endif
+        #endif
+        HeyzapAds.Start("1234", HeyzapAds.FLAG_NO_OPTIONS);
 
         HZBannerAd.SetDisplayListener(delegate(string adState, string adTag) {
             this.console.Append("BANNER: " + adState + " Tag : " + adTag);
@@ -148,24 +155,47 @@ public class AdManager : MonoBehaviour {
         string tag = this.adTag();
         bool available = false;
 
-        switch (this.SelectedAdType) {
-        case AdType.Interstitial:
-            available = HZInterstitialAd.IsAvailable(tag);
-            break;
-        case AdType.Video:
-            available = HZVideoAd.IsAvailable(tag);
-            break;
-        case AdType.Incentivized:
-            available = HZIncentivizedAd.IsAvailable(tag);
-            break;
-        case AdType.Banner:
-            // Not applicable
-            break;
-        case AdType.Offerwall:
-            available = HZOfferWallAd.IsAvailable(tag);
-            break;
+        if (tag == null)
+        {
+            switch (this.SelectedAdType) {
+                case AdType.Interstitial:
+                    available = HZInterstitialAd.IsAvailable();
+                    break;
+                case AdType.Video:
+                    available = HZVideoAd.IsAvailable();
+                    break;
+                case AdType.Incentivized:
+                    available = HZIncentivizedAd.IsAvailable();
+                    break;
+                case AdType.Banner:
+                    // Not applicable
+                    break;
+                case AdType.Offerwall:
+                    available = HZOfferWallAd.IsAvailable();
+                    break;
+            }
         }
-
+        else
+        {
+            switch (this.SelectedAdType) {
+                case AdType.Interstitial:
+                    available = HZInterstitialAd.IsAvailable(tag);
+                    break;
+                case AdType.Video:
+                    available = HZVideoAd.IsAvailable(tag);
+                    break;
+                case AdType.Incentivized:
+                    available = HZIncentivizedAd.IsAvailable(tag);
+                    break;
+                case AdType.Banner:
+                    // Not applicable
+                    break;
+                case AdType.Offerwall:
+                    available = HZOfferWallAd.IsAvailable(tag);
+                    break;
+            }
+        }
+            
         string availabilityMessage = available ? "available" : "not available";
         this.console.Append(this.SelectedAdType.ToString() + " with tag: " + tag + " is " + availabilityMessage);
     }
@@ -174,19 +204,23 @@ public class AdManager : MonoBehaviour {
         string tag = this.adTag();
 
         HZShowOptions showOptions = new HZShowOptions();
-        showOptions.Tag = tag;
 
         HZIncentivizedShowOptions incentivizedOptions = new HZIncentivizedShowOptions();
-        incentivizedOptions.Tag = tag;
         incentivizedOptions.IncentivizedInfo = "test app incentivized info!";
 
         HZBannerShowOptions bannerOptions = new HZBannerShowOptions();
-        bannerOptions.Tag = tag;
         bannerOptions.Position = this.bannerPosition;
 
         HZOfferWallShowOptions offerwallOptions = new HZOfferWallShowOptions();
         offerwallOptions.ShouldCloseAfterFirstClick = offerwallCloseOnFirstClickToggle.isOn;
-        offerwallOptions.Tag = tag;
+
+        if (tag != null)
+        {
+            showOptions.Tag = tag;
+            incentivizedOptions.Tag = tag;
+            bannerOptions.Tag = tag;
+            offerwallOptions.Tag = tag;
+        }
 
         this.console.Append("Showing " + this.SelectedAdType.ToString() + " with tag: " + tag);
         switch (this.SelectedAdType) {
@@ -211,19 +245,42 @@ public class AdManager : MonoBehaviour {
     public void FetchButton() {
         string tag = this.adTag();
         this.console.Append("Fetching " + this.SelectedAdType.ToString() + " with tag: " + tag);
-        switch(this.SelectedAdType) {
-            case AdType.Interstitial:
-                HZInterstitialAd.Fetch(tag);
-                break;
-            case AdType.Video:
-                HZVideoAd.Fetch(tag);
-                break;
-            case AdType.Incentivized:
-                HZIncentivizedAd.Fetch(tag);
-                break;
-            case AdType.Offerwall:
-                HZOfferWallAd.Fetch(tag);
-                break;
+
+        if (tag == null)
+        {
+            switch (this.SelectedAdType)
+            {
+                case AdType.Interstitial:
+                    HZInterstitialAd.Fetch();
+                    break;
+                case AdType.Video:
+                    HZVideoAd.Fetch();
+                    break;
+                case AdType.Incentivized:
+                    HZIncentivizedAd.Fetch();
+                    break;
+                case AdType.Offerwall:
+                    HZOfferWallAd.Fetch();
+                    break;
+            }            
+        }
+        else
+        {
+            switch (this.SelectedAdType)
+            {
+                case AdType.Interstitial:
+                    HZInterstitialAd.Fetch(tag);
+                    break;
+                case AdType.Video:
+                    HZVideoAd.Fetch(tag);
+                    break;
+                case AdType.Incentivized:
+                    HZIncentivizedAd.Fetch(tag);
+                    break;
+                case AdType.Offerwall:
+                    HZOfferWallAd.Fetch(tag);
+                    break;
+            }
         }
     }
 
@@ -352,8 +409,8 @@ public class AdManager : MonoBehaviour {
 
     private string adTag() {
         string tag = this.adTagTextField.text;
-        if (tag == null || tag.Trim().Length == 0) {
-            return "default";
+        if (tag.Trim().Length == 0) {
+            return null;
         } else {
             return tag;
         }
